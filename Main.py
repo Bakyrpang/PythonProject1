@@ -1,12 +1,38 @@
 import cv2
 import mediapipe
-import pyautogui
+import serial
 from math import sqrt
+
+arduino = serial.Serial('COM4', 9600)
+
+def clamp(value, min_val, max_val):
+    if value < min_val:
+        return min_val
+    elif value > max_val:
+        return max_val
+    else:
+        return value
+
+def sendData(data: list, device: serial.Serial):
+    while len(data) < 4:
+        data.append(0)
+
+    final_data = ""
+    for val in data:
+        val = clamp(val, 0, 180)
+        final_data += "0"*(3-len(str(val))) + str(val)
+
+    print(final_data)
+    device.write(final_data.encode())
 
 webcam = cv2.VideoCapture(1)
 myHands = mediapipe.solutions.hands.Hands()
 drawingUtils = mediapipe.solutions.drawing_utils
 x1 = y1 = x2 = y2 = 0
+
+servoAngle: int = 0
+previousServoAngle: int = 0
+
 while True:
     _, image = webcam.read()
     key = cv2.waitKey(17)
@@ -46,13 +72,20 @@ while True:
 
     #control volume based on dist
     if dist > 50 and hands:
-        pyautogui.press("volumeup")
+        servoAngle += 5
     elif hands:
-        pyautogui.press("volumedown")
+        servoAngle -= 5
 
     #close window when esc key is pressed
     if key == 27:
         break
+
+    servoAngle = clamp(servoAngle, 0, 180)
+
+    if servoAngle != previousServoAngle:
+        sendData(data=[servoAngle], device=arduino)
+
+    previousServoAngle = servoAngle
 
 webcam.release()
 cv2.destroyWindow("Volume control")
