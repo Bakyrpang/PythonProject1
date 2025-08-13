@@ -1,9 +1,23 @@
 import cv2
 import mediapipe
 import serial
-from math import sqrt
+from math import sqrt, atan2, pi
+
+#settings
+adjust_factors = {'Hand angle': -5}
 
 arduino = serial.Serial('COM4', 9600)
+
+webcam = cv2.VideoCapture(1)
+myHands = mediapipe.solutions.hands.Hands()
+drawingUtils = mediapipe.solutions.drawing_utils
+
+x1 = y1 = x2 = y2 = 0
+dx1 = dx2 = dy1 = dy2 = 0
+hand_angle: float = 0
+
+servoAngle: int = 0
+previousServoAngle: int = 0
 
 def clamp(value, min_val, max_val):
     if value < min_val:
@@ -24,14 +38,6 @@ def sendData(data: list, device: serial.Serial):
 
     print(final_data)
     device.write(final_data.encode())
-
-webcam = cv2.VideoCapture(1)
-myHands = mediapipe.solutions.hands.Hands()
-drawingUtils = mediapipe.solutions.drawing_utils
-x1 = y1 = x2 = y2 = 0
-
-servoAngle: int = 0
-previousServoAngle: int = 0
 
 while True:
     _, image = webcam.read()
@@ -61,6 +67,19 @@ while True:
                     cv2.circle(img = image, center = (x,y), radius = 10, color = (0, 0, 255), thickness = 2)
                     x2 = x
                     y2 = y
+
+            # get angle of the hand
+            dx1, dy1 = landmarks[0].x, landmarks[0].y
+            dx2, dy2 = landmarks[9].x, landmarks[9].y
+            dx = dx2 - dx1
+            dy = dy2 - dy1
+
+            hand_angle = atan2(dy, dx)
+            #range: -pi to 0
+            hand_angle = clamp(hand_angle, -pi, 0)
+            hand_angle = -(hand_angle/pi)*180
+            hand_angle += adjust_factors['Hand angle']
+
     #draw a line between x1, y1 and x2, y2
     cv2.line(image, (x1, y1), (x2, y2), color = (0, 255, 0), thickness = 2)
 
@@ -82,8 +101,7 @@ while True:
 
     servoAngle = clamp(servoAngle, 0, 180)
 
-    if servoAngle != previousServoAngle:
-        sendData(data=[servoAngle], device=arduino)
+    sendData(data=[int(hand_angle)], device=arduino)
 
     previousServoAngle = servoAngle
 
