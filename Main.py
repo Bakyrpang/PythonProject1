@@ -5,7 +5,7 @@ from math import sqrt, atan2, pi, sin, cos, radians, asin
 
 #settings
 adjust_factors = {'Hand angle': -5,
-                  'Hand distance': (0, 10),
+                  'Hand distance': (0, 1),
                   'Hand angle yz': (-90)}
 
 #constants
@@ -28,6 +28,9 @@ hand_angle_yz: float = 0
 final_data: list = [0, 0, 0, 0]
 
 servoAngle: int = 0
+
+lenTTM: float = 0 #normalised distance from middle finger to center point
+lenBTM: float = 0 #normalised distance from wrist to center point
 
 def clamp(value, min_val, max_val):
     if value < min_val:
@@ -117,8 +120,11 @@ while True:
             hand_angle_yz += adjust_factors['Hand angle yz']
             hand_angle_yz = clamp(hand_angle_yz, 0, 45)
 
+            lenBTM = landmarks[0].y - landmarks[9].y
+            lenTTM = 1-(landmarks[9].y - landmarks[12].y)
+
             #get normalized distance of the hand
-            hand_distance = landmarks[9].y
+            hand_distance = myMap(landmarks[9].y, lenBTM, lenTTM, 0, 1)
 
     #draw a line between x1, y1 and x2, y2
     cv2.line(image, (x1, y1), (x2, y2), color = (0, 255, 0), thickness = 2)
