@@ -18,6 +18,8 @@ dampen_strength: dict = {'general': 2,
 #constants
 arduino_port = 'COM3'
 video_port = 0
+image_flip = False
+flipCode = 1
 
 try:
     arduino = serial.Serial(arduino_port, 9600)
@@ -124,6 +126,8 @@ def dampen(x: list, previous_values: list):
 
 while True:
     _, image = webcam.read()
+    if image_flip:
+        image = cv2.flip(image, flipCode)
     key = cv2.waitKey(1000//framerate)
     final_data = [90,45,52,0] #reset data list
 
