@@ -8,7 +8,7 @@ adjust_factors: dict = {'Hand angle': -5,
                         'Hand distance': (0, 1),
                         'Hand angle yz': (-90)}
 framerate: int = 200
-dampen_strength: dict = {'general': 20,
+dampen_strength: dict = {'general': 2,
                          0: 0,
                          1: 0,
                          2: 0,
@@ -17,6 +17,7 @@ dampen_strength: dict = {'general': 20,
 
 #constants
 arduino_port = 'COM3'
+video_port = 0
 
 try:
     arduino = serial.Serial(arduino_port, 9600)
@@ -33,7 +34,7 @@ except serial.serialutil.SerialException:
         else:
             break
 
-webcam = cv2.VideoCapture(1)
+webcam = cv2.VideoCapture(video_port)
 myHands = mediapipe.solutions.hands.Hands()
 drawingUtils = mediapipe.solutions.drawing_utils
 
